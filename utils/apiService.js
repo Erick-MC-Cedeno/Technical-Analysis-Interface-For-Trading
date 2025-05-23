@@ -1,5 +1,5 @@
 // Servicio para obtener datos de TradingView
-const API_BASE_URL = 'https://bookish-journey-v9g6vrvg5xp2w5r6-5000.app.github.dev/api';
+const API_BASE_URL = 'https://jubilant-barnacle-wp9r7579grqc9xpx-5000.app.github.dev/api';
 
 export const fetchTradingData = async (symbol) => {
   try {
