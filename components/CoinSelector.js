@@ -10,7 +10,7 @@ export default function CoinSelector({ monedas, onSelect }) {
         {/* Banner */}
         <Card className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 border-0">
           <CardContent className="p-8 text-center">
-            <h1 className="text-4xl font-bold text-white mb-2">Trading Bot</h1>
+            <h1 className="text-4xl font-bold text-white mb-2">technical trading analysis</h1>
             <p className="text-purple-100">Creado por Erick Cedeno</p>
           </CardContent>
         </Card>
