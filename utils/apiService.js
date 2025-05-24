@@ -3,7 +3,6 @@ const API_BASE_URL = 'https://jubilant-barnacle-wp9r7579grqc9xpx-5000.app.github
 
 export const fetchTradingData = async (symbol) => {
   try {
-    console.log(`Fetching data for ${symbol}...`);
     const response = await fetch(`${API_BASE_URL}/trading/${symbol}`, {
       method: 'GET',
       headers: {
@@ -13,12 +12,10 @@ export const fetchTradingData = async (symbol) => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Server response:', errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Received data:', data);
     
     if (data.error) {
       throw new Error(data.error);

@@ -14,7 +14,6 @@ export default function Dashboard({ moneda, ultimaActualizacion, onActualizar, o
   const fetchData = async () => {
     try {
       const nuevoDatos = await fetchTradingData(moneda.symbol);
-      console.log('Nuevos datos recibidos:', nuevoDatos);
       setDatos(nuevoDatos);
       setError(null);
     } catch (err) {
@@ -26,7 +25,6 @@ export default function Dashboard({ moneda, ultimaActualizacion, onActualizar, o
   };
 
   useEffect(() => {
-    console.log('Iniciando carga de datos para:', moneda.symbol);
     setLoading(true);
     fetchData();
   }, [moneda.symbol]);
