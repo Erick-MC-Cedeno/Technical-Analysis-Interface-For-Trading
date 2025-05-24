@@ -39,7 +39,7 @@ cd Trading-bot-UI
 ```bash
 npm install
 # or
-pnpm install
+npm install --force
 ```
 
 3. Install backend dependencies:
