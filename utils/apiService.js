@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://jubilant-barnacle-wp9r7579grqc9xpx-5000.app.github.dev/api';
+const API_BASE_URL = 'https://effective-bassoon-5j4gqrq4r4gc7g7j-5000.app.github.dev/api';
 
 export const fetchTradingData = async (symbol) => {
   try {
