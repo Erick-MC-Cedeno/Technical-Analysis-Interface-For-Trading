@@ -63,7 +63,27 @@ npm run dev
 pnpm dev
 ```
 
+
 3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 📷 Capturas de pantalla
+
+A continuación se muestran imágenes de la interfaz:
+
+### Card
+![Card](photos/card.png)
+
+### Dashboard 1
+![Dashboard 1](photos/dashboard1.png)
+
+### Dashboard 2
+![Dashboard 2](photos/dashboard2.png)
+
+### Dashboard 3
+![Dashboard 3](photos/dashboard3.png)
+
+### Loader
+![Loader](photos/loader.png)
 
 ## 💡 Project Structure
 
