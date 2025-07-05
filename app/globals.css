@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --background: 220 13% 5%;
+    --foreground: 220 13% 95%;
+    --card: 220 13% 7%;
+    --card-foreground: 220 13% 95%;
+    --popover: 220 13% 7%;
+    --popover-foreground: 220 13% 95%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 220 13% 95%;
+    --secondary: 220 13% 12%;
+    --secondary-foreground: 220 13% 95%;
+    --muted: 220 13% 12%;
+    --muted-foreground: 220 13% 65%;
+    --accent: 220 13% 15%;
+    --accent-foreground: 220 13% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 13% 95%;
+    --border: 220 13% 15%;
+    --input: 220 13% 15%;
+    --ring: 142 76% 36%;
     --radius: 0.5rem;
   }
 
@@ -54,30 +54,34 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-trading-dark-900 text-foreground font-mono;
   }
 }
 
-/* Estilos personalizados para el trading bot */
+/* Professional trading styles */
 @layer components {
   .trading-card {
-    @apply bg-white/10 backdrop-blur-sm border-purple-300/30 transition-all duration-300 hover:bg-white/20;
+    @apply bg-trading-dark-800 border border-trading-dark-600 backdrop-blur-sm transition-all duration-300 hover:bg-trading-dark-700 hover:border-trading-dark-500;
   }
 
   .trading-button {
-    @apply bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200;
+    @apply bg-trading-green-600 hover:bg-trading-green-700 text-white font-medium px-4 py-2 rounded-md transition-colors duration-200;
+  }
+
+  .trading-button-secondary {
+    @apply bg-trading-dark-600 hover:bg-trading-dark-500 text-white font-medium px-4 py-2 rounded-md transition-colors duration-200 border border-trading-dark-400;
   }
 
   .trading-gradient {
-    @apply bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800;
+    @apply bg-gradient-to-br from-trading-dark-900 via-trading-dark-800 to-trading-dark-900;
   }
 
   .indicator-value {
-    @apply text-2xl font-bold text-white;
+    @apply text-2xl font-bold text-white font-mono;
   }
 
   .indicator-label {
-    @apply text-sm text-purple-200;
+    @apply text-sm text-trading-dark-200 font-medium;
   }
 
   .crypto-icon {
@@ -85,67 +89,91 @@
   }
 
   .loading-spinner {
-    @apply animate-spin h-12 w-12 text-purple-400;
+    @apply animate-spin h-12 w-12 text-trading-green-500;
   }
 
   .recommendation-badge {
-    @apply px-4 py-2 rounded-lg font-semibold text-white;
+    @apply px-4 py-2 rounded-md font-semibold text-white font-mono;
   }
 
   .signal-text {
-    @apply text-sm font-medium;
+    @apply text-sm font-medium font-mono;
+  }
+
+  .price-positive {
+    @apply text-trading-green-400;
+  }
+
+  .price-negative {
+    @apply text-trading-red-400;
+  }
+
+  .price-neutral {
+    @apply text-trading-dark-200;
+  }
+
+  .chart-container {
+    @apply bg-trading-dark-800 border border-trading-dark-600 rounded-lg p-4;
+  }
+
+  .metric-card {
+    @apply bg-trading-dark-800 border border-trading-dark-600 rounded-lg p-4 hover:border-trading-dark-500 transition-colors;
+  }
+
+  .header-gradient {
+    @apply bg-gradient-to-r from-trading-dark-800 to-trading-dark-700 border-b border-trading-dark-600;
   }
 }
 
-/* Animaciones personalizadas */
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+/* Chart styles */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #404040;
+  stroke-opacity: 0.3;
 }
 
-@keyframes glow {
-  0%,
-  100% {
-    box-shadow: 0 0 5px rgba(168, 85, 247, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.8);
-  }
+.recharts-text {
+  fill: #a3a3a3;
+  font-family: Monaco, Menlo, "Ubuntu Mono", monospace;
+  font-size: 12px;
 }
 
-.float-animation {
-  animation: float 3s ease-in-out infinite;
-}
-
-.glow-animation {
-  animation: glow 2s ease-in-out infinite;
-}
-
-/* Scrollbar personalizado */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: #1a1a1a;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.6);
+  background: #404040;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.8);
+  background: #525252;
 }
 
-/* Responsive typography */
+/* Professional animations */
+@keyframes market-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.market-pulse {
+  animation: market-pulse 2s ease-in-out infinite;
+}
+
+/* Responsive adjustments */
 @media (max-width: 640px) {
   .crypto-icon {
     @apply text-3xl;

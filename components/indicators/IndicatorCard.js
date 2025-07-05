@@ -2,9 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function IndicatorCard({ title, icon, children }) {
   return (
-    <Card className="bg-white/10 backdrop-blur-sm border-purple-300/30">
+    <Card className="trading-card">
       <CardHeader>
-        <CardTitle className="text-white flex items-center">
+        <CardTitle className="text-white flex items-center font-mono text-sm">
           {icon}
           {title}
         </CardTitle>

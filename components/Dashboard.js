@@ -1,3 +1,5 @@
+"use client"
+
 import Header from "@/components/Header"
 import PriceCard from "@/components/indicators/PriceCard"
 import RecommendationCard from "@/components/indicators/RecommendationCard"
@@ -7,56 +9,56 @@ import { fetchTradingData } from "@/utils/apiService"
 import { useState, useEffect } from "react"
 
 export default function Dashboard({ moneda, ultimaActualizacion, onActualizar, onCambiarMoneda }) {
-  const [datos, setDatos] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [datos, setDatos] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const fetchData = async () => {
     try {
-      const nuevoDatos = await fetchTradingData(moneda.symbol);
-      setDatos(nuevoDatos);
-      setError(null);
+      const nuevoDatos = await fetchTradingData(moneda.symbol)
+      setDatos(nuevoDatos)
+      setError(null)
     } catch (err) {
-      console.error('Error:', err);
-      setError('Error al obtener datos de trading');
+      console.error("Error:", err)
+      setError("Error al obtener datos de trading")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    setLoading(true);
-    fetchData();
-  }, [moneda.symbol]);
+    setLoading(true)
+    fetchData()
+  }, [moneda.symbol])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800 p-4 flex items-center justify-center">
-        <div className="text-white text-xl">Cargando datos...</div>
+      <div className="min-h-screen trading-gradient p-4 flex items-center justify-center">
+        <div className="text-white text-xl font-mono">LOADING MARKET DATA...</div>
       </div>
-    );
+    )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800 p-4 flex items-center justify-center">
-        <div className="text-red-400 text-xl">{error}</div>
+      <div className="min-h-screen trading-gradient p-4 flex items-center justify-center">
+        <div className="text-trading-red-400 text-xl font-mono">{error}</div>
       </div>
-    );
+    )
   }
 
   if (!datos) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800 p-4 flex items-center justify-center">
-        <div className="text-white text-xl">No hay datos disponibles</div>
+      <div className="min-h-screen trading-gradient p-4 flex items-center justify-center">
+        <div className="text-white text-xl font-mono">NO DATA AVAILABLE</div>
       </div>
-    );
+    )
   }
 
-  const recomendacion = getRecommendation(datos);
+  const recomendacion = getRecommendation(datos)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800 p-4">
+    <div className="min-h-screen trading-gradient p-4">
       <div className="max-w-7xl mx-auto">
         <Header
           moneda={moneda}
@@ -65,7 +67,7 @@ export default function Dashboard({ moneda, ultimaActualizacion, onActualizar, o
           onCambiarMoneda={onCambiarMoneda}
         />
 
-        {/* Precio y Recomendación */}
+        {/* Price and Recommendation */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <PriceCard precio={datos.precio} decimales={datos.decimales} symbol={moneda.symbol} />
           <RecommendationCard
@@ -76,7 +78,7 @@ export default function Dashboard({ moneda, ultimaActualizacion, onActualizar, o
           />
         </div>
 
-        {/* Indicadores Técnicos */}
+        {/* Technical Indicators */}
         <IndicatorGrid datos={datos} />
       </div>
     </div>

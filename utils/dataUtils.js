@@ -49,10 +49,10 @@ export const getRecommendation = (data) => {
 export const getRecommendationColor = (rec) => {
   switch (rec) {
     case "COMPRA":
-      return "bg-green-500"
+      return "bg-trading-green-600"
     case "VENTA":
-      return "bg-red-500"
+      return "bg-trading-red-600"
     default:
-      return "bg-gray-500"
+      return "bg-trading-dark-600"
   }
 }
