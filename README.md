@@ -32,6 +32,9 @@ This project is a professional-grade cryptocurrency trading interface that retri
 1. Clone the repository:
 ```bash
 git clone https://github.com/Erick-MC-Cedeno/Technical-Analysis-Interface-For-Trading
+```
+
+```
 cd Technical-Analysis-Interface-For-Trading
 ```
 
