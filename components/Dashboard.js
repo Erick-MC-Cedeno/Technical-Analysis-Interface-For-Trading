@@ -8,15 +8,17 @@ import { getRecommendation } from "@/utils/dataUtils"
 import { fetchTradingData } from "@/utils/apiService"
 import { useState, useEffect } from "react"
 
-export default function Dashboard({ moneda, ultimaActualizacion, onActualizar, onCambiarMoneda }) {
+export default function Dashboard({ moneda, onCambiarMoneda }) {
   const [datos, setDatos] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(null)
 
   const fetchData = async () => {
     try {
       const nuevoDatos = await fetchTradingData(moneda.symbol)
       setDatos(nuevoDatos)
+      setUltimaActualizacion(new Date().toLocaleString())
       setError(null)
     } catch (err) {
       console.error("Error:", err)

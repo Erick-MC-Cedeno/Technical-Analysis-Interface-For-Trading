@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://curly-xylophone-69g4ggwwqq4cwgg-5000.app.github.dev/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export const fetchTradingData = async (symbol) => {
   try {
