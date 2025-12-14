@@ -3,6 +3,9 @@ from flask_cors import CORS
 from tradingview_ta import TA_Handler, Interval
 import time
 import threading
+import requests
+import statistics
+import math
 
 app = Flask(__name__)
 # Allow localhost (dev) and the GH Codespace origin — adjust as needed for production
@@ -61,6 +64,32 @@ def fetch_from_ta(symbol):
     analysis = handler.get_analysis()
     indicators = analysis.indicators
 
+    # attempt to fetch recent klines from Binance to build simple historical series
+    history = {}
+    try:
+        # request more klines so we can compute longer EMAs (e.g., 200)
+        klines = fetch_klines(symbol, interval='15m', limit=300)
+        closes = [float(k[4]) for k in klines]
+        timestamps = [int(k[0]) for k in klines]
+        history['closes'] = closes
+        history['times'] = timestamps
+        # compute simple RSI and MACD series from closes
+        history['rsi'] = compute_rsi_series(closes, period=14)
+        macd_line, macd_signal = compute_macd_series(closes, fast=12, slow=26, signal=9)
+        history['macd'] = macd_line
+        history['macd_signal'] = macd_signal
+        # Bollinger bands series
+        bb_upper, bb_middle, bb_lower = compute_bollinger_series(closes, period=20)
+        history['bb_upper'] = bb_upper
+        history['bb_middle'] = bb_middle
+        history['bb_lower'] = bb_lower
+        # EMA historical series for charting (50, 100, 200)
+        history['ema50'] = compute_ema_series(closes, 50)
+        history['ema100'] = compute_ema_series(closes, 100)
+        history['ema200'] = compute_ema_series(closes, 200)
+    except Exception:
+        history = {}
+
     return {
         'precio': indicators.get('close'),
         'decimales': 8 if 'PEPE' in symbol else 2,
@@ -88,7 +117,108 @@ def fetch_from_ta(symbol):
         'buySignals': analysis.summary.get('BUY'),
         'sellSignals': analysis.summary.get('SELL'),
         'neutralSignals': analysis.summary.get('NEUTRAL')
+        , 'history': history
     }
+
+
+def fetch_klines(symbol, interval='15m', limit=100):
+    # Binance expects symbols like ETHUSDT
+    url = 'https://api.binance.com/api/v3/klines'
+    params = {'symbol': symbol, 'interval': interval, 'limit': limit}
+    resp = requests.get(url, params=params, timeout=5)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def compute_sma(series, period):
+    out = []
+    for i in range(len(series)):
+        if i + 1 < period:
+            out.append(None)
+        else:
+            window = series[i + 1 - period:i + 1]
+            out.append(sum(window) / period)
+    return out
+
+
+def compute_ema_series(series, period):
+    emas = []
+    k = 2 / (period + 1)
+    ema_prev = None
+    for i, price in enumerate(series):
+        if i < period - 1:
+            emas.append(None)
+            continue
+        if ema_prev is None:
+            sma = sum(series[i + 1 - period:i + 1]) / period
+            ema_prev = sma
+            emas.append(ema_prev)
+        else:
+            ema = price * k + ema_prev * (1 - k)
+            emas.append(ema)
+            ema_prev = ema
+    return emas
+
+
+def compute_rsi_series(prices, period=14):
+    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
+    seed = deltas[:period]
+    up = sum(x for x in seed if x > 0) / period
+    down = -sum(x for x in seed if x < 0) / period
+    rs = up / down if down != 0 else 0
+    rsi = [None] * (period)
+    rsi.append(100 - 100 / (1 + rs))
+    up_avg = up
+    down_avg = down
+    for delta in deltas[period:]:
+        up_val = max(delta, 0)
+        down_val = -min(delta, 0)
+        up_avg = (up_avg * (period - 1) + up_val) / period
+        down_avg = (down_avg * (period - 1) + down_val) / period
+        rs = up_avg / down_avg if down_avg != 0 else 0
+        rsi.append(100 - 100 / (1 + rs))
+    # pad to match length of prices
+    if len(rsi) < len(prices):
+        rsi = [None] * (len(prices) - len(rsi)) + rsi
+    return rsi
+
+
+def compute_macd_series(prices, fast=12, slow=26, signal=9):
+    ema_fast = compute_ema_series(prices, fast)
+    ema_slow = compute_ema_series(prices, slow)
+    macd = []
+    for ef, es in zip(ema_fast, ema_slow):
+        if ef is None or es is None:
+            macd.append(None)
+        else:
+            macd.append(ef - es)
+    # compute signal line as EMA of MACD (skip None values)
+    macd_values = [m for m in macd if m is not None]
+    signal_line = []
+    if len(macd_values) >= signal:
+        sig_ema = compute_ema_series(macd_values, signal)
+        # re-align with macd original length
+        sig_full = [None] * (len(macd) - len(sig_ema)) + sig_ema
+        signal_line = sig_full
+    else:
+        signal_line = [None] * len(macd)
+    return macd, signal_line
+
+
+def compute_bollinger_series(prices, period=20, mult=2):
+    middle = compute_sma(prices, period)
+    upper = []
+    lower = []
+    for i in range(len(prices)):
+        if i + 1 < period:
+            upper.append(None)
+            lower.append(None)
+            continue
+        window = prices[i + 1 - period:i + 1]
+        sd = statistics.pstdev(window)
+        upper.append(middle[i] + mult * sd if middle[i] is not None else None)
+        lower.append(middle[i] - mult * sd if middle[i] is not None else None)
+    return upper, middle, lower
 
 def get_trading_cached(symbol):
     now = time.time()

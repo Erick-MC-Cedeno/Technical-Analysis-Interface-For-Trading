@@ -2,20 +2,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts"
 
 export default function ChartCard({ title, icon, data, type, currentValue, datos }) {
+  // helper: get last indices in `arr` that have non-null values (preserve order)
+  const lastIndicesWithValue = (arr, n) => {
+    if (!Array.isArray(arr) || arr.length === 0) return []
+    const idxs = []
+    for (let i = arr.length - 1; i >= 0 && idxs.length < n; i--) {
+      if (arr[i] !== null && arr[i] !== undefined) idxs.push(i)
+    }
+    return idxs.reverse()
+  }
+
   const renderChart = () => {
     switch (type) {
       case "rsi":
-        // Generar datos históricos basados en el RSI actual
-        const rsiChartData = Array.from({ length: 14 }, (_, i) => {
-          const variation = (Math.random() - 0.5) * 10 // Variación de ±5 puntos
-          const rsiValue = Math.max(0, Math.min(100, datos.rsi + variation))
-          return {
-            name: `T-${13 - i}`,
-            rsi: rsiValue,
-          }
-        })
-        // Asegurar que el último punto sea el RSI actual
-        rsiChartData[rsiChartData.length - 1].rsi = datos.rsi
+        // Preferir series históricas proporcionadas por el backend
+        let rsiChartData
+        if (datos.history && Array.isArray(datos.history.rsi) && datos.history.rsi.length > 0) {
+          const histRsi = datos.history.rsi.slice(-14)
+          // preserve historical None values (do not fill with current value), then ensure last is current
+          rsiChartData = histRsi.map((v, i) => ({ name: `T-${14 - histRsi.length + i}`, rsi: v }))
+          // ensure last value matches current indicator
+          rsiChartData[rsiChartData.length - 1].rsi = datos.rsi
+        } else {
+          // No historical series available; show only current value (from API)
+          rsiChartData = [{ name: "T-0", rsi: datos.rsi }]
+        }
+
+        
 
         return (
           <div className="space-y-4">
@@ -80,21 +93,27 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
         )
 
       case "macd":
-        // Generar datos históricos basados en MACD actual
-        const macdChartData = Array.from({ length: 14 }, (_, i) => {
-          const macdVariation = (Math.random() - 0.5) * Math.abs(datos.macdValue) * 0.3
-          const signalVariation = (Math.random() - 0.5) * Math.abs(datos.macdSignal) * 0.3
-          return {
-            name: `T-${13 - i}`,
-            macd: datos.macdValue + macdVariation,
-            signal: datos.macdSignal + signalVariation,
-          }
-        })
-        // Asegurar que el último punto sean los valores actuales
-        macdChartData[macdChartData.length - 1] = {
-          name: "T-0",
-          macd: datos.macdValue,
-          signal: datos.macdSignal,
+        // Preferir series históricas del backend
+        let macdChartData
+        if (datos.history && Array.isArray(datos.history.macd) && datos.history.macd.length > 0) {
+          const hmacd = datos.history.macd.slice(-14)
+          const hsignal = (Array.isArray(datos.history.macd_signal) && datos.history.macd_signal.slice(-14)) || []
+          // preserve historical None values; set last point explicitly to current values
+          macdChartData = hmacd.map((m, i) => ({ name: `T-${14 - hmacd.length + i}`, macd: m, signal: hsignal[i] }))
+          macdChartData[macdChartData.length - 1] = { name: "T-0", macd: datos.macdValue, signal: datos.macdSignal }
+        } else {
+          // No history available; show only current MACD/Signal (from API)
+          macdChartData = [{ name: "T-0", macd: datos.macdValue, signal: datos.macdSignal }]
+        }
+
+        // compute tight y-domain so MACD small differences are visible
+        const macdValues = (macdChartData || []).flatMap(d => [d.macd, d.signal].filter(v => v !== null && v !== undefined))
+        let macdYDomain = ["auto", "auto"]
+        if (macdValues.length > 0) {
+          const min = Math.min(...macdValues)
+          const max = Math.max(...macdValues)
+          const pad = (max - min) * 0.08 || Math.max(1e-8, Math.abs(max) * 0.002)
+          macdYDomain = [min - pad, max + pad]
         }
 
         return (
@@ -134,7 +153,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
               <LineChart data={macdChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
                 <XAxis dataKey="name" tick={{ fill: "#a3a3a3", fontSize: 10 }} />
-                <YAxis tick={{ fill: "#a3a3a3", fontSize: 10 }} />
+                <YAxis domain={macdYDomain} tick={{ fill: "#a3a3a3", fontSize: 10 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#1a1a1a",
@@ -152,26 +171,36 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
         )
 
       case "bollinger":
-        // Generar datos históricos basados en las Bollinger Bands actuales
-        const bbChartData = Array.from({ length: 14 }, (_, i) => {
-          const priceVariation = (Math.random() - 0.5) * datos.precio * 0.02 // ±2% variación
-          const bandVariation = (Math.random() - 0.5) * datos.precio * 0.01 // ±1% variación para bandas
-
-          return {
-            name: `T-${13 - i}`,
-            upper: datos.bbUpper + bandVariation,
-            middle: datos.bbMiddle + priceVariation * 0.5,
-            lower: datos.bbLower + bandVariation,
-            price: datos.precio + priceVariation,
+        // Preferir series históricas del backend; usar sólo índices con valores reales
+        let bbChartData
+        // y-domain fallback (always defined so it's safe to reference in JSX)
+        let bbYDomain = ["auto", "auto"]
+        if (datos.history && Array.isArray(datos.history.closes) && datos.history.closes.length > 0) {
+          const indices = lastIndicesWithValue(datos.history.closes, 24)
+          if (indices.length > 0) {
+            bbChartData = indices.map((idx, i) => ({
+              name: `T-${indices.length - i - 1}`,
+              upper: (Array.isArray(datos.history.bb_upper) ? datos.history.bb_upper[idx] : null),
+              middle: (Array.isArray(datos.history.bb_middle) ? datos.history.bb_middle[idx] : null),
+              lower: (Array.isArray(datos.history.bb_lower) ? datos.history.bb_lower[idx] : null),
+              price: datos.history.closes[idx],
+            }))
+            // ensure final point reflects current BB values
+            bbChartData[bbChartData.length - 1] = { name: "T-0", upper: datos.bbUpper, middle: datos.bbMiddle, lower: datos.bbLower, price: datos.precio }
+          } else {
+            bbChartData = []
           }
-        })
-        // Asegurar que el último punto sean los valores actuales
-        bbChartData[bbChartData.length - 1] = {
-          name: "T-0",
-          upper: datos.bbUpper,
-          middle: datos.bbMiddle,
-          lower: datos.bbLower,
-          price: datos.precio,
+
+        // compute y-domain for Bollinger so bands and price are visible
+        const bbValues = (bbChartData || []).flatMap(d => [d.upper, d.middle, d.lower, d.price].filter(v => v !== null && v !== undefined))
+        if (bbValues.length > 0) {
+          const min = Math.min(...bbValues)
+          const max = Math.max(...bbValues)
+          const pad = (max - min) * 0.08 || Math.max(1e-8, Math.abs(max) * 0.002)
+          bbYDomain = [min - pad, max + pad]
+        }
+        } else {
+          bbChartData = []
         }
 
         return (
@@ -227,7 +256,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
               <LineChart data={bbChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
                 <XAxis dataKey="name" tick={{ fill: "#a3a3a3", fontSize: 10 }} />
-                <YAxis tick={{ fill: "#a3a3a3", fontSize: 10 }} />
+                <YAxis domain={bbYDomain} tick={{ fill: "#a3a3a3", fontSize: 10 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#1a1a1a",
@@ -260,26 +289,35 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
         )
 
       case "ema":
-        // Generar datos históricos basados en las EMAs actuales
-        const emaChartData = Array.from({ length: 14 }, (_, i) => {
-          const priceVariation = (Math.random() - 0.5) * datos.precio * 0.03 // ±3% variación
-          const emaVariation = (Math.random() - 0.5) * datos.precio * 0.015 // ±1.5% variación para EMAs
-
-          return {
-            name: `T-${13 - i}`,
-            ema50: datos.ema50 + emaVariation,
-            ema100: datos.ema100 + emaVariation * 0.8,
-            ema200: datos.ema200 + emaVariation * 0.6,
-            price: datos.precio + priceVariation,
+        // Preferir series históricas del backend (usamos closes y EMAs si vienen)
+        let emaChartData
+        if (datos.history && Array.isArray(datos.history.closes) && datos.history.closes.length > 0) {
+          const indices = lastIndicesWithValue(datos.history.closes, 24)
+          if (indices.length > 0) {
+            emaChartData = indices.map((idx, i) => ({
+              name: `T-${indices.length - i - 1}`,
+              ema50: (Array.isArray(datos.history.ema50) ? datos.history.ema50[idx] : null),
+              ema100: (Array.isArray(datos.history.ema100) ? datos.history.ema100[idx] : null),
+              ema200: (Array.isArray(datos.history.ema200) ? datos.history.ema200[idx] : null),
+              price: datos.history.closes[idx],
+            }))
+            // ensure final point reflects current EMAs
+            emaChartData[emaChartData.length - 1] = { name: "T-0", ema50: datos.ema50, ema100: datos.ema100, ema200: datos.ema200, price: datos.precio }
+          } else {
+            emaChartData = []
           }
-        })
-        // Asegurar que el último punto sean los valores actuales
-        emaChartData[emaChartData.length - 1] = {
-          name: "T-0",
-          ema50: datos.ema50,
-          ema100: datos.ema100,
-          ema200: datos.ema200,
-          price: datos.precio,
+        } else {
+          emaChartData = []
+        }
+
+        // compute tight y-domain so small EMA differences are visible
+        const emaValues = (emaChartData || []).flatMap(d => [d.ema50, d.ema100, d.ema200, d.price].filter(v => v !== null && v !== undefined))
+        let yDomain = ["auto", "auto"]
+        if (emaValues.length > 0) {
+          const min = Math.min(...emaValues)
+          const max = Math.max(...emaValues)
+          const pad = (max - min) * 0.08 || Math.max(1e-8, Math.abs(max) * 0.002)
+          yDomain = [min - pad, max + pad]
         }
 
         return (
@@ -337,7 +375,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
               <LineChart data={emaChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
                 <XAxis dataKey="name" tick={{ fill: "#a3a3a3", fontSize: 10 }} />
-                <YAxis tick={{ fill: "#a3a3a3", fontSize: 10 }} />
+                <YAxis domain={yDomain} tick={{ fill: "#a3a3a3", fontSize: 10 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#1a1a1a",
