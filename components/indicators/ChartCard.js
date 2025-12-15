@@ -1,8 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts"
 
-export default function ChartCard({ title, icon, data, type, currentValue, datos }) {
-  // helper: get last indices in `arr` that have non-null values (preserve order)
+export default function ChartCard({ title, icon, type, datos = {} }) {
+  // HELPER: ESTILO COMÚN PARA TOOLTIP (REUTILIZADO EN LOS GRÁFICOS)
+  const TOOLTIP_STYLE = {
+    backgroundColor: "#1a1a1a",
+    border: "1px solid #404040",
+    borderRadius: "4px",
+    color: "#fff",
+  }
+
+  // HELPER: OBTENER ÚLTIMOS N ÍNDICES CON VALORES NO NULOS (PRESERVA ORDEN)
   const lastIndicesWithValue = (arr, n) => {
     if (!Array.isArray(arr) || arr.length === 0) return []
     const idxs = []
@@ -12,10 +20,19 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
     return idxs.reverse()
   }
 
+  // HELPER: FORMATEAR NÚMEROS DE MANERA SEGURA A STRING CON DECIMALES
+  const safeToFixed = (v, d = 2) => {
+    const n = Number(v)
+    if (!isFinite(n)) return (0).toFixed(d)
+    return n.toFixed(d)
+  }
+
+  // RENDERIZADOR PRINCIPAL: DEVUELVE EL BLOQUE DE JSX SEGÚN `type`
   const renderChart = () => {
     switch (type) {
       case "rsi":
-        // Preferir series históricas proporcionadas por el backend
+        // BLOQUE RSI: MUESTRA VALORES NUMÉRICOS Y GRÁFICO DE RSI
+        // PREFERIR SERIES HISTÓRICAS PROPORCIONADAS POR EL BACKEND
         let rsiChartData
         if (datos.history && Array.isArray(datos.history.rsi) && datos.history.rsi.length > 0) {
           const histRsi = datos.history.rsi.slice(-14)
@@ -76,14 +93,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
                 <XAxis dataKey="name" tick={{ fill: "#a3a3a3", fontSize: 10 }} />
                 <YAxis domain={[0, 100]} tick={{ fill: "#a3a3a3", fontSize: 10 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #404040",
-                    borderRadius: "4px",
-                    color: "#fff",
-                  }}
-                />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
                 <ReferenceLine y={70} stroke="#ef4444" strokeDasharray="2 2" />
                 <ReferenceLine y={30} stroke="#10b981" strokeDasharray="2 2" />
                 <Line type="monotone" dataKey="rsi" stroke="#3b82f6" strokeWidth={2} dot={false} />
@@ -93,7 +103,8 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
         )
 
       case "macd":
-        // Preferir series históricas del backend
+        // BLOQUE MACD: MUESTRA LÍNEAS MACD/SIGNAL, HISTOGRAMA Y GRÁFICO
+        // PREFERIR SERIES HISTÓRICAS DEL BACKEND
         let macdChartData
         if (datos.history && Array.isArray(datos.history.macd) && datos.history.macd.length > 0) {
           const hmacd = datos.history.macd.slice(-14)
@@ -154,14 +165,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
                 <XAxis dataKey="name" tick={{ fill: "#a3a3a3", fontSize: 10 }} />
                 <YAxis domain={macdYDomain} tick={{ fill: "#a3a3a3", fontSize: 10 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #404040",
-                    borderRadius: "4px",
-                    color: "#fff",
-                  }}
-                />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
                 <ReferenceLine y={0} stroke="#525252" />
                 <Line type="monotone" dataKey="macd" stroke="#10b981" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="signal" stroke="#ef4444" strokeWidth={2} dot={false} />
@@ -171,7 +175,8 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
         )
 
       case "bollinger":
-        // Preferir series históricas del backend; usar sólo índices con valores reales
+        // BLOQUE BOLLINGER: MUESTRA BANDAS SUPERIOR/MEDIA/INFERIOR Y PRECIO
+        // PREFERIR SERIES HISTÓRICAS DEL BACKEND; USAR SÓLO ÍNDICES CON VALORES REALES
         let bbChartData
         // y-domain fallback (always defined so it's safe to reference in JSX)
         let bbYDomain = ["auto", "auto"]
@@ -257,14 +262,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
                 <XAxis dataKey="name" tick={{ fill: "#a3a3a3", fontSize: 10 }} />
                 <YAxis domain={bbYDomain} tick={{ fill: "#a3a3a3", fontSize: 10 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #404040",
-                    borderRadius: "4px",
-                    color: "#fff",
-                  }}
-                />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
                 <Line
                   type="monotone"
                   dataKey="upper"
@@ -289,7 +287,8 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
         )
 
       case "ema":
-        // Preferir series históricas del backend (usamos closes y EMAs si vienen)
+        // BLOQUE EMA: MUESTRA EMAs (50/100/200), ANÁLISIS DE TENDENCIA Y GRÁFICO
+        // PREFERIR SERIES HISTÓRICAS DEL BACKEND (USAMOS CLOSES Y EMAS SI VIENEN)
         let emaChartData
         if (datos.history && Array.isArray(datos.history.closes) && datos.history.closes.length > 0) {
           const indices = lastIndicesWithValue(datos.history.closes, 24)
@@ -376,14 +375,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
                 <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
                 <XAxis dataKey="name" tick={{ fill: "#a3a3a3", fontSize: 10 }} />
                 <YAxis domain={yDomain} tick={{ fill: "#a3a3a3", fontSize: 10 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #404040",
-                    borderRadius: "4px",
-                    color: "#fff",
-                  }}
-                />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
                 <Line type="monotone" dataKey="ema50" stroke="#10b981" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="ema100" stroke="#f59e0b" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="ema200" stroke="#ef4444" strokeWidth={2} dot={false} />
@@ -394,6 +386,7 @@ export default function ChartCard({ title, icon, data, type, currentValue, datos
         )
 
       default:
+        // TIPO NO RECONOCIDO: NO RENDERIZAR NADA
         return null
     }
   }
